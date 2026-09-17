@@ -194,6 +194,9 @@ function cloneCell(value) {
  *   claudeMode      ok | fail | refusal | slow (default ok)
  *   claudeDelayMs   delay for slow mode (default env FAKE_CLAUDE_DELAY_MS or 1500)
  *   verbose         forward Logger/console output to the Node console
+ *   waitDuringClaude  (ms) => void used instead of a plain blocking wait while a "slow" fake Claude
+ *                   call is in flight with sleep "real". dev/server.mjs uses it to serve other API
+ *                   requests meanwhile, like parallel Apps Script executions.
  */
 export function createAppsScriptEnv(options = {}) {
   const clock = createClock({ start: options.start, autoAdvanceMs: options.autoAdvanceMs ?? 1 });
@@ -201,6 +204,7 @@ export function createAppsScriptEnv(options = {}) {
   const timeZone = options.timeZone || readManifestTimeZone();
   const ownerEmail = (options.ownerEmail || "owner@example.com").toLowerCase();
   const verbose = Boolean(options.verbose);
+  const claudeWait = typeof options.waitDuringClaude === "function" ? options.waitDuringClaude : blockFor;
 
   const state = {
     clock,
@@ -221,6 +225,7 @@ export function createAppsScriptEnv(options = {}) {
       queue: [], // one-shot modes consumed before `mode`
       requests: [], // {at, url, headers, body, status, mode, error?}
       onRequest: null, // test hook (request) => void, runs before the fake answers
+      hookErrors: [], // exceptions thrown by onRequest
     },
     counters: { urlFetch: 0, gmailSend: 0, sleepMs: 0 },
   };
@@ -853,18 +858,26 @@ export function createAppsScriptEnv(options = {}) {
 
     const mode = state.claude.queue.length ? state.claude.queue.shift() : state.claude.mode;
     entry.mode = mode;
-    if (typeof state.claude.onRequest === "function") state.claude.onRequest(entry);
+    if (typeof state.claude.onRequest === "function") {
+      try {
+        state.claude.onRequest(entry);
+      } catch (err) {
+        // Code.gs turns fetch exceptions into stored errors, which would hide a failing test hook.
+        state.claude.hookErrors.push(err);
+        throw err;
+      }
+    }
 
     if (mode === "slow") {
       const delay = state.claude.delayMs;
       if (p.timeoutSeconds !== undefined && delay > p.timeoutSeconds * 1000) {
-        if (sleepMode === "real") blockFor(p.timeoutSeconds * 1000);
+        if (sleepMode === "real") claudeWait(p.timeoutSeconds * 1000);
         else clock.advance(p.timeoutSeconds * 1000);
         entry.status = -1;
         entry.error = "timeout";
         throw appsScriptError("Timeout: " + CLAUDE_URL);
       }
-      if (sleepMode === "real") blockFor(delay);
+      if (sleepMode === "real") claudeWait(delay);
       else clock.advance(delay);
     }
     if (mode === "fail") return finish(apiError(500, "api_error", "Internal server error (fake)"));
@@ -1028,7 +1041,8 @@ export function createAppsScriptEnv(options = {}) {
   const services = { SpreadsheetApp, PropertiesService, LockService, CacheService, Utilities, Session, ContentService, UrlFetchApp, GmailApp, ScriptApp, Logger, console: fakeConsole };
 
   if (options.loadCode !== false) {
-    const source = fs.readFileSync(options.codePath || CODE_PATH, "utf8");
+    // TUTOR_CODE_PATH lets you run the suite against a modified copy (for example, mutation checks).
+    const source = fs.readFileSync(options.codePath || process.env.TUTOR_CODE_PATH || CODE_PATH, "utf8");
     vm.runInContext(source, context, { filename: "Code.gs" });
   }
 
@@ -1201,8 +1215,9 @@ function lastUserText(messages) {
 
 // Deterministic Spanish Markdown answer that quotes the start of the student's last text.
 function fakeAnswer(lastText, messages) {
-  const withoutHeader = lastText.replace(/^\[Hilo #[^\]]*\]\s*/, "");
-  const start = withoutHeader.replace(/\s+/g, " ").trim().slice(0, 60);
+  // Quote only prose: drop the context header, fenced code and backticks so the Markdown stays valid.
+  const prose = lastText.replace(/^\[Hilo #[^\]]*\]\s*/, "").split(/\n`{3,}/)[0].replace(/`/g, "");
+  const start = prose.replace(/\s+/g, " ").trim().slice(0, 60);
   const images = messages[messages.length - 1].content;
   const imageCount = Array.isArray(images) ? images.filter((b) => b.type === "image").length : 0;
   const lines = [

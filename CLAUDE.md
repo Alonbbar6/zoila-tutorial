@@ -169,7 +169,7 @@ If the owner wants a change, point them to the admin page. `README.md` explains 
   ready-made student and admin links. No Google or Anthropic accounts are needed. The example values in
   `bridge/.env.example` point the bridge at it, and posting there only touches local test data.
   (The approval rule still applies.)
-- Tests: `node --test dev/`
+- Tests: `node --test` from the repo root (or `node --test dev/*.test.mjs`; a bare `dev/` folder argument fails on Node 24).
 - Check a bridge script: `node --check bridge/watch.mjs`, or `node bridge/watch.mjs --once` against the dev server.
 - `SPEC.md` is the contract. Keep the frontend, backend, harness and bridge consistent with it.
 - After changing `backend/Code.gs`, remind the owner to paste it into Apps Script and publish a new version

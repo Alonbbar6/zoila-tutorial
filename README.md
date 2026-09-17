@@ -201,11 +201,23 @@ http://localhost:8787. It prints ready-made links for the student page and the a
 `bridge/.env.example` values already point at it, so `cp bridge/.env.example bridge/.env` is enough
 to try the bridge locally.
 
-Run the automated tests with:
+To simulate an email from the student, post it to the dev server and run the trigger once:
 
 ```
-node --test dev/
+curl -s -X POST http://localhost:8787/dev/email -d '{"from":"zoila@example.com","subject":"Duda","body":"¿Qué es pandas?"}'
+curl -s -X POST http://localhost:8787/dev/tick
 ```
+
+Other dev endpoints: `POST /dev/claude {"mode":"ok|fail|refusal|slow"}` switches the fake Claude,
+`POST /dev/reset` wipes the local data, and `GET /dev/state` shows sent emails, notifications and threads.
+
+Run the automated tests from the repo root with:
+
+```
+node --test
+```
+
+(`node --test dev/*.test.mjs` also works. Don't pass the bare folder `dev/`: Node 24 treats it as a module path and fails.)
 
 ## Autonomy switches explained
 

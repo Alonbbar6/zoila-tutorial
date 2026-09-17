@@ -1,5 +1,5 @@
 // Tests for backend/Code.gs running inside the fake Apps Script environment (dev/fakes.mjs).
-// Run: node --test dev/
+// Run from the repo root: node --test   (or: node --test dev/*.test.mjs)
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -42,6 +42,7 @@ function scenario(name, fn, options) {
   test(name, async () => {
     const env = makeEnv(options);
     await fn(env);
+    for (const err of env.state.claude.hookErrors) throw err;
     assert.deepEqual(env.state.violations, [], "platform rule violations");
   });
 }
@@ -537,6 +538,13 @@ scenario("admin.draft stores a draft without counting toward the daily cap", (en
   assert.match(res.thread.draft, /Leí tu mensaje/);
   assert.equal(ok(admin(env, "stats")).stats.autoCallsToday, 0);
   assert.equal(lastClaude(env).status, 200);
+  // Drafting a thread whose last message is from the tutor still sends a request that ends with the student.
+  const q = createThread(env, { text: "¿Qué es una medida?" });
+  ok(student(env, "process", { id: q.id }));
+  const redraft = ok(admin(env, "draft", { id: q.id }));
+  assert.equal(lastClaude(env).status, 200, lastClaude(env).error);
+  assert.deepEqual(lastClaude(env).body.messages.map((m) => m.role), ["user"]);
+  assert.ok(redraft.thread.draft);
   env.setClaudeMode("fail");
   assert.equal(failCode(admin(env, "draft", { id: t.id })), "server_error");
   delete env.state.properties.ANTHROPIC_API_KEY;
@@ -589,6 +597,9 @@ scenario("email intake: allowlist, INTAKE_SINCE, quoted history, follow-ups, ide
 
   env.addInboundEmail({ from: "Otra Persona <otra@example.com>", subject: "Spam", body: "Hola" });
   env.addInboundEmail({ from: "zoila@example.com", subject: "Vieja", body: "Antes de configurar", date: since - 2 * HOUR });
+  // A Gmail thread with an old message and a new reply: only the new message is imported.
+  const mixed = env.addInboundEmail({ from: "zoila@example.com", subject: "Tema viejo", body: "Mensaje viejo", date: since - HOUR });
+  env.addInboundEmail({ from: "zoila@example.com", subject: "Re: Tema viejo", body: "Mensaje nuevo", threadId: mixed.threadId, date: since }); // exactly INTAKE_SINCE counts as new
   const q = env.addInboundEmail({
     from: "Zoila Pérez <ZOILA@Example.com>",
     subject: "RE: Fwd: ¿Qué es un DataFrame?",
@@ -600,17 +611,30 @@ scenario("email intake: allowlist, INTAKE_SINCE, quoted history, follow-ups, ide
   const p = env.addInboundEmail({ from: "zoila@example.com", subject: "Para Alon", body: "On Wed, Sep 16, 2026 at 9:00 AM Alon <owner@example.com>\nwrote:\n> hola" });
   env.clock.advance(1000);
   env.addInboundEmail({ from: "zoila@example.com", subject: "", body: "Correo sin asunto pero con una duda sobre medidas DAX muy importante que quiero resolver pronto por favor" });
+  env.clock.advance(1000);
+  env.addInboundEmail({ from: "zoila@example.com", subject: "Fwd: Ejercicio", body: "Mira esto:\n\n> texto citado sin encabezado\n> otra línea" });
+  env.clock.advance(1000);
+  env.addInboundEmail({ from: "zoila@example.com", subject: "Correo reenviado", body: "Te paso esto\n\nDe: Profesor <profe@example.com>\nEnviado: lunes" });
 
-  assert.equal(ok(admin(env, "intake")).imported, 4);
-  const threads = ok(admin(env, "list")).threads.sort((a, b) => a.number - b.number);
-  assert.equal(threads.length, 4);
-  assert.deepEqual(threads.map((t) => t.number), [1, 2, 3, 4]);
-  assert.deepEqual(threads.map((t) => t.kind), ["question", "direct", "direct", "question"]);
-  assert.deepEqual(threads.map((t) => t.origin), ["email", "email", "email", "email"]);
-  assert.deepEqual(threads.map((t) => t.topic), ["otro", "otro", "otro", "otro"]);
+  assert.equal(ok(admin(env, "intake")).imported, 7);
+  const all = ok(admin(env, "list")).threads.sort((a, b) => a.number - b.number);
+  assert.equal(all.length, 7);
+  // The mixed Gmail thread is the oldest import (its new reply is dated exactly INTAKE_SINCE).
+  const mixedThread = all[0];
+  assert.equal(mixedThread.title, "Tema viejo");
+  const mixedMessages = ok(admin(env, "thread", { id: mixedThread.id })).messages;
+  assert.deepEqual(mixedMessages.map((m) => m.text), ["Mensaje nuevo"]);
+  const threads = all.slice(1);
+  assert.deepEqual(threads.map((t) => t.number), [2, 3, 4, 5, 6, 7]);
+  assert.deepEqual(threads.map((t) => t.kind), ["question", "direct", "direct", "question", "question", "question"]);
+  assert.ok(threads.every((t) => t.origin === "email" && t.topic === "otro"));
+  assert.equal(threads[4].title, "Ejercicio");
+  assert.equal(ok(admin(env, "thread", { id: threads[4].id })).messages[0].text, "Mira esto:");
+  assert.equal(ok(admin(env, "thread", { id: threads[5].id })).messages[0].text, "Te paso esto");
   assert.equal(threads[0].title, "¿Qué es un DataFrame?");
   assert.equal(threads[1].title, "Mensaje directo");
-  assert.equal(threads[3].title, "Correo sin asunto pero con una duda sobre medidas DAX muy importante que quiero r");
+  // Fallback title: first 80 characters of the body, trimmed like site titles.
+  assert.equal(threads[3].title, "Correo sin asunto pero con una duda sobre medidas DAX muy importante que quiero");
 
   const text = (t) => ok(admin(env, "thread", { id: t.id })).messages[0];
   assert.equal(text(threads[0]).text, "Hola, ¿qué es un DataFrame?\nGracias");
@@ -628,7 +652,7 @@ scenario("email intake: allowlist, INTAKE_SINCE, quoted history, follow-ups, ide
   assert.equal(ok(admin(env, "intake")).imported, 0);
   env.state.cache.clear();
   assert.equal(ok(admin(env, "intake")).imported, 0);
-  assert.equal(ok(admin(env, "list")).threads.length, 4);
+  assert.equal(ok(admin(env, "list")).threads.length, 7);
 
   // A follow-up in the same Gmail thread is appended to the same site thread.
   env.clock.advance(60000);
@@ -641,7 +665,7 @@ scenario("email intake: allowlist, INTAKE_SINCE, quoted history, follow-ups, ide
   assert.equal(followed.thread.lastFrom, "student");
   assert.equal(followed.messages.length, 3);
   assert.equal(followed.messages[2].text, "¿Y una Serie?");
-  assert.equal(ok(admin(env, "list")).threads.length, 4);
+  assert.equal(ok(admin(env, "list")).threads.length, 7);
   assert.ok(env.state.properties.LAST_INTAKE_AT);
   assert.equal(claudeRequests(env).length, 0, "admin.intake does not call Claude");
 });
@@ -995,6 +1019,8 @@ scenario("setup is idempotent: headers, tokens, one tick trigger", (env) => {
   assert.deepEqual(env.sheetValues("Messages")[0], ["id", "threadId", "from", "text", "code", "createdAt", "via", "emailMessageId"]);
 
   const t = createThread(env);
+  props.COUNTER = env.state.properties.COUNTER;
+  assert.equal(props.COUNTER, "1");
   env.clock.advance(HOUR);
   env.run("setup");
   env.run("setup");

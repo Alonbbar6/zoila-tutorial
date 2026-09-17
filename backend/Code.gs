@@ -1780,7 +1780,7 @@ function emailTitle_(subject, text) {
     previous = title;
     title = title.replace(/^(?:re|fwd?|rv)\s*:\s*/i, "");
   }
-  if (!title) title = String(text || "").replace(/\s+/g, " ").trim().slice(0, 80);
+  if (!title) title = String(text || "").replace(/\s+/g, " ").trim().slice(0, 80).trim();
   if (!title) title = "Correo sin asunto";
   return title.slice(0, TITLE_MAX);
 }
