@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f4f5f7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#101318" media="(prefers-color-scheme: dark)">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Mis preguntas · Tutor IA</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2316191D'/%3E%3Crect x='7' y='17' width='4.5' height='8' rx='1.2' fill='%23F2C811'/%3E%3Crect x='13.75' y='11' width='4.5' height='14' rx='1.2' fill='%23F2C811'/%3E%3Crect x='20.5' y='7' width='4.5' height='18' rx='1.2' fill='%23F2C811'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="assets/base.css">
+  <link rel="stylesheet" href="assets/student.css">
+  <script type="module" src="assets/student.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Ir al contenido</a>
+
+  <header class="topbar">
+    <div class="shell topbar-inner">
+      <a class="brand" href="index.html" data-route="">
+        <svg class="glyph" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+          <rect class="glyph-bg" width="32" height="32" rx="8"/>
+          <rect class="glyph-bar" x="7" y="17" width="4.5" height="8" rx="1.2"/>
+          <rect class="glyph-bar" x="13.75" y="11" width="4.5" height="14" rx="1.2"/>
+          <rect class="glyph-bar" x="20.5" y="7" width="4.5" height="18" rx="1.2"/>
+        </svg>
+        <span id="greeting">Tutor IA</span>
+      </a>
+      <nav class="topnav" aria-label="Menú principal">
+        <a id="nav-home" href="index.html" data-route="" hidden>Mis preguntas</a>
+        <a id="nav-guide" href="guia.html">Guía</a>
+      </nav>
+    </div>
+  </header>
+
+  <p id="conn" class="conn shell" role="status" hidden>Parece que no hay conexión. Lo seguiremos intentando solos.</p>
+
+  <main id="main" class="shell" tabindex="-1">
+
+    <!-- Shown while we check the link with the server -->
+    <section id="view-loading" class="view" aria-busy="true">
+      <p class="sr-only">Cargando…</p>
+      <div class="skeleton sk-title"></div>
+      <div class="skeleton sk-block"></div>
+      <div class="skeleton sk-block"></div>
+    </section>
+
+    <section id="view-nolink" class="view screen" aria-labelledby="nolink-title" hidden>
+      <h1 id="nolink-title" tabindex="-1">Necesitas tu enlace personal</h1>
+      <p>Abre el enlace que te envió <span data-tutor>tu tutor</span>. Es un enlace largo que te trae directo a tus preguntas.</p>
+      <p class="hint">Si ya lo usaste antes, vuelve a abrirlo desde el mismo mensaje o correo. Después, este navegador lo recordará.</p>
+      <p><a class="btn" href="guia.html">Mientras tanto, ver la guía</a></p>
+    </section>
+
+    <section id="view-notconfigured" class="view screen" aria-labelledby="notconfigured-title" hidden>
+      <h1 id="notconfigured-title" tabindex="-1">El sitio todavía no está conectado</h1>
+      <p>Esta página ya existe, pero falta conectarla con el lugar donde se guardan tus preguntas. Es un último paso que hará <span data-tutor>tu tutor</span>.</p>
+      <p class="hint">Vuelve a intentarlo más tarde. Mientras tanto, la guía funciona sin problema.</p>
+      <p><a class="btn" href="guia.html">Ver la guía</a></p>
+    </section>
+
+    <section id="view-error" class="view screen" aria-labelledby="error-title" hidden>
+      <h1 id="error-title" tabindex="-1">No pudimos conectar</h1>
+      <p id="error-text">Revisa tu conexión a internet y vuelve a intentarlo.</p>
+      <p><button id="retry-btn" class="btn btn-blue" type="button">Reintentar</button></p>
+    </section>
+
+    <!-- Home: her conversations -->
+    <section id="view-home" class="view" aria-labelledby="home-title" hidden>
+      <div class="intro">
+        <h1 id="home-title" tabindex="-1">¿Qué quieres aprender hoy?</h1>
+        <p class="lede">Escribe tu duda con calma. La respuesta aparecerá aquí mismo.</p>
+      </div>
+
+      <div class="actions">
+        <a id="action-question" class="action action-primary" href="index.html?nueva=pregunta" data-route="?nueva=pregunta">
+          <span class="action-title">Hacer una pregunta <span class="arrow" aria-hidden="true">→</span></span>
+          <span id="action-question-sub" class="action-sub">Te responde el Tutor IA, normalmente en más o menos un minuto.</span>
+        </a>
+        <a id="action-direct" class="action" href="index.html?nueva=directo" data-route="?nueva=directo">
+          <span class="action-title"><span>Mensaje directo a <span data-tutor>tu tutor</span></span> <span class="arrow" aria-hidden="true">→</span></span>
+          <span class="action-sub">Te responde <span data-tutor>tu tutor</span> en persona, cuando tenga un momento.</span>
+        </a>
+      </div>
+
+      <div class="home-notes">
+        <p class="aside-note">También puedes escribirle un correo a <span data-tutor>tu tutor</span> como siempre: la respuesta aparecerá aquí también.</p>
+        <button id="notify-btn" class="btn btn-sm js-notify" type="button" hidden>Avisarme cuando llegue una respuesta</button>
+      </div>
+
+      <div class="list-head">
+        <h2 id="list-title">Mis preguntas</h2>
+        <span id="list-count" class="list-count"></span>
+      </div>
+      <div id="thread-list" class="thread-list"></div>
+    </section>
+
+    <!-- Compose: new question or direct message -->
+    <section id="view-compose" class="view" aria-labelledby="compose-title" hidden>
+      <a class="back" href="index.html" data-route=""><span aria-hidden="true">←</span> Volver a mis preguntas</a>
+      <h1 id="compose-title" tabindex="-1">Nueva pregunta</h1>
+
+      <div id="draft-note" class="draft-note" hidden>
+        <span>Recuperamos lo que estabas escribiendo.</span>
+        <button id="draft-clear" class="btn btn-ghost btn-sm" type="button">Empezar de nuevo</button>
+      </div>
+
+      <form id="compose-form" class="form" novalidate>
+        <fieldset class="kind">
+          <legend class="label">¿Quién te responde?</legend>
+          <div class="choices">
+            <label class="choice" for="kind-question">
+              <input type="radio" name="kind" id="kind-question" value="question" checked>
+              <span class="choice-title">Pregunta al Tutor IA</span>
+              <span id="kind-question-sub" class="choice-sub">Responde en más o menos un minuto.</span>
+            </label>
+            <label class="choice" for="kind-direct">
+              <input type="radio" name="kind" id="kind-direct" value="direct">
+              <span class="choice-title">Mensaje directo a <span data-tutor>tu tutor</span></span>
+              <span class="choice-sub">Responde en persona, cuando tenga un momento.</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <div id="field-topic" class="field">
+          <label for="f-topic">Tema</label>
+          <p id="hint-topic" class="hint">Si no sabes cuál, elige «Otro».</p>
+          <select id="f-topic" name="topic" class="select" aria-describedby="hint-topic">
+            <option value="">Elige un tema</option>
+            <option value="powerbi">Power BI</option>
+            <option value="powerquery">Power Query</option>
+            <option value="dax">DAX</option>
+            <option value="python">Python</option>
+            <option value="error">Un error</option>
+            <option value="otro">Otro</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="f-title">Título</label>
+          <p id="hint-title" class="hint">Una frase corta. Por ejemplo: «No me sale el total por ciudad».</p>
+          <input id="f-title" name="title" class="input" type="text" autocomplete="off" aria-describedby="hint-title count-title">
+          <span id="count-title" class="counter">0 / 140</span>
+        </div>
+
+        <div class="field">
+          <label id="label-text" for="f-text">Tu pregunta</label>
+          <p id="hint-text" class="hint">Cuenta qué querías hacer, qué intentaste y qué pasó.</p>
+          <textarea id="f-text" name="text" class="textarea" rows="6" aria-describedby="hint-text count-text"></textarea>
+          <span id="count-text" class="counter">0 / 8000</span>
+        </div>
+
+        <div class="field">
+          <label for="f-code">Código o mensaje de error <span class="optional">(opcional)</span></label>
+          <p id="hint-code" class="hint">Pega aquí el código o el mensaje de error completo.</p>
+          <textarea id="f-code" name="code" class="textarea code" rows="5" spellcheck="false" autocapitalize="off" autocomplete="off" aria-describedby="hint-code count-code"></textarea>
+          <span id="count-code" class="counter">0 / 8000</span>
+        </div>
+
+        <p class="privacy"><strong>Cuida tu privacidad.</strong> No escribas contraseñas ni datos privados. Si necesitas mostrar datos, usa solo los nombres de las columnas o datos inventados.</p>
+
+        <p id="compose-error" class="form-error" role="alert"></p>
+
+        <div class="form-actions">
+          <button id="compose-submit" class="btn btn-primary" type="submit">Enviar pregunta</button>
+          <a class="btn btn-ghost" href="index.html" data-route="">Cancelar</a>
+        </div>
+      </form>
+    </section>
+
+    <!-- One conversation -->
+    <section id="view-thread" class="view" aria-labelledby="thread-title" hidden>
+      <a class="back" href="index.html" data-route=""><span aria-hidden="true">←</span> Mis preguntas</a>
+
+      <div class="thread-head">
+        <p id="thread-num" class="eyebrow"></p>
+        <h1 id="thread-title" tabindex="-1"></h1>
+        <div id="thread-meta" class="thread-meta"></div>
+      </div>
+
+      <p id="thread-error" class="form-error" role="alert"></p>
+      <p><button id="thread-retry" class="btn btn-blue" type="button" hidden>Reintentar</button></p>
+
+      <ol id="messages" class="messages" aria-label="Conversación"></ol>
+
+      <div id="thread-status" class="status-line" role="status" aria-live="polite"></div>
+      <button id="notify-btn-thread" class="btn btn-sm js-notify" type="button" hidden>Avisarme cuando llegue una respuesta</button>
+
+      <div id="resolve-row" class="resolve-row" hidden>
+        <p id="resolve-prompt">¿Ya te quedó claro?</p>
+        <button id="resolve-btn" class="btn" type="button">Marcar como resuelta</button>
+      </div>
+      <p id="closed-note" class="closed-note" tabindex="-1" hidden>Marcaste esta conversación como resuelta. Si vuelves a escribir, se abrirá de nuevo.</p>
+
+      <form id="reply-form" class="form reply" aria-labelledby="reply-title" novalidate hidden>
+        <h2 id="reply-title">¿Tienes otra duda sobre esto?</h2>
+        <div class="field">
+          <label for="r-text">Tu mensaje</label>
+          <textarea id="r-text" name="text" class="textarea" rows="4" aria-describedby="count-r-text"></textarea>
+          <span id="count-r-text" class="counter">0 / 8000</span>
+        </div>
+        <details id="r-code-box" class="more">
+          <summary>Añadir código o mensaje de error</summary>
+          <div class="field">
+            <label for="r-code">Código o mensaje de error <span class="optional">(opcional)</span></label>
+            <p id="hint-r-code" class="hint">Pega aquí el código o el mensaje de error completo.</p>
+            <textarea id="r-code" name="code" class="textarea code" rows="5" spellcheck="false" autocapitalize="off" autocomplete="off" aria-describedby="hint-r-code count-r-code"></textarea>
+            <span id="count-r-code" class="counter">0 / 8000</span>
+          </div>
+        </details>
+        <p id="reply-error" class="form-error" role="alert"></p>
+        <div class="form-actions">
+          <button id="reply-submit" class="btn btn-primary" type="submit">Enviar</button>
+          <span class="hint">Sin contraseñas ni datos privados.</span>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <footer id="foot" class="foot shell" hidden>
+    <p>Las respuestas del Tutor IA las escribe una inteligencia artificial y a veces se equivoca: prueba siempre el código. <span data-tutor>tu tutor</span> también lee estas conversaciones para ayudarte mejor.</p>
+  </footer>
+
+  <noscript><p class="shell">Para usar esta página necesitas activar JavaScript en tu navegador.</p></noscript>
+</body>
+</html>

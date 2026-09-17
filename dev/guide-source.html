@@ -1,0 +1,546 @@
+<title>Ruta Power BI + Python</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  --bg:#F4F5F7; --surface:#FFFFFF; --ink:#16191D; --muted:#56606D; --line:#DCE0E6;
+  --accent:#F2C811; --accent-ink:#6E5200; --accent-soft:#FDF6D3;
+  --py:#2F6DB5; --py-soft:#E6EEF8;
+  --warn:#B4461F; --warn-soft:#FBEAE3;
+  --code-bg:#14181F; --code-ink:#E6EAF0; --code-cm:#8FA3B8; --code-str:#F2C811;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#101318; --surface:#181C23; --ink:#E7EAEE; --muted:#9BA4B0; --line:#2A3039;
+    --accent-ink:#F2C811; --accent-soft:#2C2610;
+    --py:#86B4EA; --py-soft:#17263A;
+    --warn:#F0916C; --warn-soft:#33201A;
+    --code-bg:#0A0D11;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#101318; --surface:#181C23; --ink:#E7EAEE; --muted:#9BA4B0; --line:#2A3039;
+  --accent-ink:#F2C811; --accent-soft:#2C2610;
+  --py:#86B4EA; --py-soft:#17263A;
+  --warn:#F0916C; --warn-soft:#33201A;
+  --code-bg:#0A0D11;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.6;padding-inline:16px;padding-block:0 64px}
+.wrap{max-width:1120px;margin:0 auto}
+header.top{padding-block:48px 32px;border-bottom:1px solid var(--line);margin-bottom:32px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(34px,6vw,56px);line-height:1.02;margin:10px 0 16px;text-wrap:balance;letter-spacing:-.02em}
+h1 .bi{background:var(--accent);color:#16191D;padding:0 .18em;border-radius:6px}
+h1 .py{color:var(--py)}
+.lede{max-width:62ch;color:var(--muted);font-size:19px;margin:0}
+.facts{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+.chip{font-size:14px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 12px}
+.layout{display:grid;grid-template-columns:1fr;gap:40px}
+@media (min-width:960px){.layout{grid-template-columns:230px 1fr}}
+nav.toc{display:none}
+@media (min-width:960px){
+  nav.toc{display:block;position:sticky;top:calc(env(safe-area-inset-top,0px) + 20px);align-self:start;font-size:15px}
+}
+nav.toc ol{list-style:none;padding:0;margin:0;display:grid;gap:2px}
+nav.toc a{display:flex;gap:10px;align-items:center;color:var(--muted);text-decoration:none;padding:6px 10px;border-radius:8px}
+nav.toc a:hover,nav.toc a:focus-visible{background:var(--surface);color:var(--ink)}
+nav.toc .n{font-family:var(--mono);font-size:12px;width:20px}
+nav.toc .progress{margin-top:18px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.bar{height:6px;background:var(--line);border-radius:6px;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+main{min-width:0}
+section{margin-bottom:64px;scroll-margin-top:20px}
+h2{font-family:var(--display);font-weight:800;font-size:clamp(26px,4vw,34px);line-height:1.1;margin:6px 0 14px;text-wrap:balance;letter-spacing:-.01em}
+h3{font-family:var(--display);font-weight:600;font-size:21px;margin:30px 0 8px}
+p,li{max-width:68ch}
+.phase-tag{display:inline-flex;gap:8px;align-items:center;font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent-ink)}
+.phase-tag.py{color:var(--py)}
+.phase-tag b{background:var(--accent);color:#16191D;padding:2px 8px;border-radius:5px}
+.phase-tag.py b{background:var(--py);color:#fff}
+.meta{color:var(--muted);font-size:15px;margin-top:-6px}
+ol.steps{padding-left:0;list-style:none;counter-reset:s;display:grid;gap:10px}
+ol.steps>li{counter-increment:s;position:relative;padding-left:40px}
+ol.steps>li::before{content:counter(s);position:absolute;left:0;top:1px;width:26px;height:26px;border-radius:50%;border:1.5px solid var(--ink);font-family:var(--mono);font-size:13px;display:grid;place-items:center}
+.path{font-family:var(--mono);font-size:14px;background:var(--surface);border:1px solid var(--line);padding:1px 6px;border-radius:5px;white-space:normal}
+kbd{font-family:var(--mono);font-size:13px;border:1px solid var(--line);border-bottom-width:2px;padding:0 5px;border-radius:4px;background:var(--surface)}
+code.i{font-family:var(--mono);font-size:.88em;background:var(--py-soft);color:var(--ink);padding:1px 5px;border-radius:4px}
+.block{position:relative;margin:14px 0 18px;border-radius:12px;overflow:hidden}
+.block .label{display:flex;justify-content:space-between;align-items:center;gap:10px;font-family:var(--mono);font-size:12px;padding:8px 12px;letter-spacing:.04em}
+.code .label{background:#1E242D;color:#B8C3CF}
+pre{margin:0;overflow-x:auto;padding:16px 18px;font-family:var(--mono);font-size:14px;line-height:1.65}
+.code pre{background:var(--code-bg);color:var(--code-ink)}
+.code .c{color:var(--code-cm);font-style:italic}
+.code .s{color:var(--code-str)}
+.prompt{border:2px solid var(--accent);background:var(--accent-soft)}
+.prompt .label{background:var(--accent);color:#16191D;font-weight:600}
+.prompt pre{white-space:pre-wrap;font-family:var(--body);font-size:16px;line-height:1.55;color:var(--ink)}
+.prompt.big pre{max-height:none}
+button.copy{font-family:var(--mono);font-size:12px;border:1px solid currentColor;background:transparent;color:inherit;border-radius:6px;padding:3px 10px;cursor:pointer}
+button.copy:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--py);outline-offset:2px}
+.note{border-left:3px solid var(--py);background:var(--py-soft);padding:12px 16px;border-radius:0 10px 10px 0;margin:16px 0}
+.note.warn{border-color:var(--warn);background:var(--warn-soft)}
+.note p{margin:0}
+.done{display:flex;gap:12px;align-items:flex-start;border:1px dashed var(--line);border-radius:10px;padding:12px 14px;margin-top:20px;background:var(--surface)}
+.done input{width:20px;height:20px;margin-top:3px;accent-color:var(--accent);flex:none}
+.done label{cursor:pointer}
+.done label b{display:block}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin:14px 0}
+table{border-collapse:collapse;width:100%;font-size:15px;min-width:560px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:400}
+tr:last-child td{border-bottom:0}
+td code{font-family:var(--mono);font-size:13px}
+.toolbox{display:grid;grid-template-columns:1fr;gap:12px}
+@media (min-width:720px){.toolbox{grid-template-columns:1fr 1fr}}
+.tool{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.tool .when{font-family:var(--mono);font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.tool p{margin:0;white-space:pre-wrap}
+.rules{display:grid;gap:10px;padding:0;list-style:none}
+.rules li{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 16px}
+.rules b{font-family:var(--display);font-weight:600}
+footer{color:var(--muted);font-size:14px;border-top:1px solid var(--line);padding-top:20px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+html{scroll-behavior:smooth}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <div class="eyebrow">Guía paso a paso · con un tutor de IA gratis</div>
+  <h1>Aprende <span class="bi">Power BI</span> y <span class="py">Python</span> con ayuda de la IA</h1>
+  <p class="lede">Una ruta de 6 semanas pensada para empezar desde cero. Tú escribes el código, y la IA te explica, te da pistas y te corrige, como una profesora particular que tiene toda la paciencia del mundo.</p>
+  <div class="facts">
+    <span class="chip">⏱ 3–4 horas por semana</span>
+    <span class="chip">💸 Todo gratis</span>
+    <span class="chip">🪟 Windows (Power BI Desktop solo funciona en Windows)</span>
+    <span class="chip">🤖 Claude.ai o ChatGPT, versión gratis</span>
+  </div>
+</header>
+
+<div class="layout">
+<nav class="toc" aria-label="Contenido">
+  <ol>
+    <li><a href="#como"><span class="n">·</span>Cómo usar esta guía</a></li>
+    <li><a href="#preparar"><span class="n">0</span>Preparar tu computadora</a></li>
+    <li><a href="#tutor"><span class="n">★</span>Tu tutor de IA</a></li>
+    <li><a href="#f1"><span class="n">1</span>Power BI sin código</a></li>
+    <li><a href="#f2"><span class="n">2</span>Python básico</a></li>
+    <li><a href="#f3"><span class="n">3</span>Tablas con pandas</a></li>
+    <li><a href="#f4"><span class="n">4</span>Python dentro de Power BI</a></li>
+    <li><a href="#f5"><span class="n">5</span>Proyecto final</a></li>
+    <li><a href="#prompts"><span class="n">⚒</span>Frases útiles para la IA</a></li>
+    <li><a href="#errores"><span class="n">!</span>Cuando algo falla</a></li>
+    <li><a href="#reglas"><span class="n">✓</span>Reglas de oro</a></li>
+  </ol>
+  <div class="progress">
+    <div class="eyebrow">Tu progreso</div>
+    <div id="progText" style="font-size:14px">0 de 6 etapas</div>
+    <div class="bar"><i id="progBar"></i></div>
+  </div>
+</nav>
+
+<main>
+
+<section id="como">
+  <h2>Cómo usar esta guía</h2>
+  <ol class="steps">
+    <li><strong>Prepara tu computadora una sola vez</strong> (etapa 0). Instalas Power BI y Python.</li>
+    <li><strong>Copia el «prompt del tutor»</strong> y pégalo al empezar una conversación nueva con la IA. Así la IA se comporta como profesora: va paso a paso, en español sencillo y sin darte todo resuelto.</li>
+    <li><strong>Avanza por las etapas en orden.</strong> En cada una encontrarás qué hacer, un código de ejemplo corto y una frase para pedirle ayuda a la IA.</li>
+    <li><strong>Marca la casilla al terminar cada etapa.</strong> Tu progreso se guarda en este navegador.</li>
+  </ol>
+  <div class="note"><p><strong>Consejo:</strong> no copies y pegues el código sin más. Escríbelo tú a mano, aunque tardes más. Así es como tus dedos y tu cabeza lo aprenden de verdad.</p></div>
+</section>
+
+<section id="preparar">
+  <span class="phase-tag"><b>Etapa 0</b> Semana 1 · 1 hora</span>
+  <h2>Preparar tu computadora</h2>
+
+  <h3>1. Instala Power BI Desktop</h3>
+  <ol class="steps">
+    <li>Abre la <strong>Microsoft Store</strong>, busca «Power BI Desktop» y pulsa <strong>Obtener</strong>. Es gratis.</li>
+    <li>Ábrelo una vez para comprobar que funciona. Si te pide iniciar sesión, puedes cerrar esa ventana; no hace falta para practicar.</li>
+  </ol>
+
+  <h3>2. Instala Python</h3>
+  <ol class="steps">
+    <li>Entra en <span class="path">python.org</span> → <strong>Downloads</strong> → descarga la última versión para Windows.</li>
+    <li>Al instalar, <strong>marca la casilla «Add python.exe to PATH»</strong> antes de pulsar «Install Now». Es muy importante.</li>
+    <li>Abre el menú Inicio, escribe <kbd>cmd</kbd> y abre el <strong>Símbolo del sistema</strong>. Pega esta línea y pulsa <kbd>Enter</kbd>:</li>
+  </ol>
+  <div class="block code">
+    <div class="label"><span>SÍMBOLO DEL SISTEMA</span><button class="copy" type="button">Copiar</button></div>
+<pre>pip install pandas matplotlib</pre>
+  </div>
+  <p>Esto instala dos «paquetes»: <strong>pandas</strong> (para trabajar con tablas) y <strong>matplotlib</strong> (para hacer gráficos). Power BI necesita los dos.</p>
+
+  <h3>3. Conecta Python con Power BI</h3>
+  <ol class="steps">
+    <li>En Power BI ve a <span class="path">Archivo → Opciones y configuración → Opciones</span>.</li>
+    <li>En la lista de la izquierda (sección Global) elige <strong>Scripts de Python</strong>.</li>
+    <li>Comprueba que aparezca la carpeta donde se instaló Python. Si está vacía, elígela de la lista y pulsa <strong>Aceptar</strong>.</li>
+  </ol>
+
+  <h3>4. Crea tus datos de práctica</h3>
+  <p>Crea una carpeta llamada <span class="path">curso</span> dentro de <span class="path">Documentos</span>. Abre el <strong>Bloc de notas</strong>, pega esto y guárdalo en esa carpeta con el nombre <span class="path">ventas.csv</span> (en «Tipo» elige «Todos los archivos»).</p>
+  <div class="block code">
+    <div class="label"><span>ventas.csv</span><button class="copy" type="button">Copiar</button></div>
+<pre>fecha,producto,categoria,cantidad,precio,ciudad
+2026-01-05,Café,Bebidas,3,2.50,Bogotá
+2026-01-05,Pan,Panadería,5,1.20,Lima
+2026-01-06,Té,Bebidas,2,2.00,Madrid
+2026-01-07,Café,Bebidas,6,2.50,Ciudad de México
+2026-01-08,Galletas,Panadería,4,3.10,Bogotá
+2026-01-09,Pan,Panadería,8,1.20,Madrid
+2026-01-10,Jugo,Bebidas,3,3.50,Lima
+2026-01-11,Café,Bebidas,4,2.50,Madrid
+2026-01-12,Pastel,Panadería,1,12.00,Ciudad de México
+2026-01-13,Té,Bebidas,5,2.00,Bogotá
+2026-01-14,Galletas,Panadería,2,3.10,Lima
+2026-01-15,Jugo,Bebidas,6,3.50,Ciudad de México</pre>
+  </div>
+
+  <div class="done"><input type="checkbox" id="chk0" data-step><label for="chk0"><b>Lo lograste si…</b>Power BI abre, <code class="i">pip install</code> terminó sin errores rojos y tienes <code class="i">ventas.csv</code> en tu carpeta <code class="i">curso</code>.</label></div>
+</section>
+
+<section id="tutor">
+  <span class="phase-tag"><b>★</b> Úsalo en cada sesión</span>
+  <h2>Tu tutor de IA</h2>
+  <p>Abre <span class="path">claude.ai</span> o <span class="path">chatgpt.com</span> con tu cuenta gratis, empieza una <strong>conversación nueva</strong> y pega este texto completo. Después, simplemente conversa con la IA.</p>
+
+  <div class="block prompt big">
+    <div class="label"><span>PROMPT DEL TUTOR · pégalo al empezar</span><button class="copy" type="button">Copiar</button></div>
+<pre>Quiero que seas mi tutora personal de programación y análisis de datos. Soy principiante total.
+
+MI OBJETIVO: aprender Power BI y Python (pandas y matplotlib) para analizar datos, y aprender a usar la IA como ayuda para escribir código.
+
+MI EQUIPO: Windows, Power BI Desktop en español y Python con pandas y matplotlib ya instalados.
+
+MIS DATOS DE PRÁCTICA: un archivo ventas.csv con las columnas fecha, producto, categoria, cantidad, precio, ciudad.
+
+MI RUTA:
+- Etapa 1: Power BI sin código (cargar datos, gráficos, filtros, una medida DAX sencilla)
+- Etapa 2: Python básico (variables, listas, if, for)
+- Etapa 3: tablas con pandas (leer CSV, nuevas columnas, agrupar)
+- Etapa 4: Python dentro de Power BI (script como origen de datos, transformar en Power Query, objeto visual de Python)
+- Etapa 5: proyecto final con mis propios datos
+
+CÓMO QUIERO QUE ME ENSEÑES:
+1. Habla en español sencillo. Si usas una palabra técnica, explícala con un ejemplo de la vida diaria.
+2. Una sola cosa a la vez: explica un concepto corto, dame un ejercicio pequeño y ESPERA mi respuesta antes de seguir.
+3. No me des la solución completa de inmediato. Primero dame una pista. Si te lo pido otra vez, dame la solución.
+4. El código debe ser muy corto (máximo 10 líneas), con un comentario en español en cada línea y nombres de variables en español.
+5. Cuando te pegue un error, explícame qué significa en palabras simples y ayúdame a encontrar la causa yo misma.
+6. Cada 3 ejercicios, hazme un mini quiz de 3 preguntas.
+7. Anímame, pero dime con honestidad si algo está mal.
+8. Cuando escriba la palabra RESUMEN, dame un resumen corto de lo que aprendí, en qué etapa voy y cuál es el siguiente paso, para poder pegarlo en una conversación nueva.
+
+Para empezar, pregúntame en qué etapa estoy y qué sé hacer ya.</pre>
+  </div>
+
+  <div class="note"><p><strong>La versión gratis tiene un límite de mensajes.</strong> Cuando se acabe o la conversación se haga muy larga, escribe <strong>RESUMEN</strong>, copia la respuesta, abre una conversación nueva, pega de nuevo el prompt del tutor y, debajo, el resumen. Así la IA sabe exactamente por dónde ibas.</p></div>
+</section>
+
+<section id="f1">
+  <span class="phase-tag"><b>Etapa 1</b> Semana 1–2</span>
+  <h2>Power BI sin código</h2>
+  <p class="meta">Objetivo: entender cómo piensa Power BI antes de meter Python.</p>
+  <ol class="steps">
+    <li>En Power BI: <span class="path">Inicio → Obtener datos → Texto o CSV</span> → elige <code class="i">ventas.csv</code> → pulsa <strong>Transformar datos</strong>.</li>
+    <li>Se abre <strong>Power Query</strong> (la «cocina» donde se limpian los datos). Revisa que la columna <code class="i">precio</code> tenga números decimales (icono <strong>1.2</strong>).</li>
+    <li>Pulsa <span class="path">Cerrar y aplicar</span>.</li>
+    <li>Crea un <strong>gráfico de columnas agrupadas</strong>: arrastra <code class="i">producto</code> al Eje X y <code class="i">cantidad</code> al Eje Y.</li>
+    <li>Añade una <strong>segmentación de datos</strong> con <code class="i">ciudad</code> y prueba a filtrar.</li>
+    <li>Crea tu primera medida: <span class="path">Inicio → Nueva medida</span> y escribe:</li>
+  </ol>
+  <div class="block code">
+    <div class="label"><span>DAX · medida</span><button class="copy" type="button">Copiar</button></div>
+<pre>Total Ventas = SUMX(ventas, ventas[cantidad] * ventas[precio])</pre>
+  </div>
+  <p>Ponla en un objeto visual de <strong>Tarjeta</strong>. Traducido al español: «recorre cada fila de la tabla ventas, multiplica cantidad por precio y suma todos los resultados».</p>
+
+  <div class="note warn"><p><strong>¿Los precios salen multiplicados por 100</strong> (250 en vez de 2.50)? Es por la configuración de tu país, que usa coma decimal. En Power Query, haz clic derecho en <code class="i">precio</code> → <span class="path">Cambiar tipo → Usar configuración regional</span> → Número decimal · Inglés (Estados Unidos).</p></div>
+
+  <div class="block prompt">
+    <div class="label"><span>PÍDELE A TU TUTORA</span><button class="copy" type="button">Copiar</button></div>
+<pre>Estoy en la Etapa 1. Ya cargué ventas.csv en Power BI e hice un gráfico de columnas. Explícame con un ejemplo de la vida diaria la diferencia entre una columna y una medida en Power BI, y luego dame un ejercicio para crear una medida nueva.</pre>
+  </div>
+
+  <div class="done"><input type="checkbox" id="chk1" data-step><label for="chk1"><b>Lo lograste si…</b>tienes una página con un gráfico, una tarjeta con «Total Ventas» y un filtro por ciudad que funciona.</label></div>
+</section>
+
+<section id="f2">
+  <span class="phase-tag py"><b>Etapa 2</b> Semana 2–3</span>
+  <h2>Python básico</h2>
+  <p class="meta">Objetivo: perderle el miedo al código. Todavía sin Power BI.</p>
+  <ol class="steps">
+    <li>Abre el menú Inicio y busca <strong>IDLE</strong> (se instaló junto con Python).</li>
+    <li>Ve a <span class="path">File → New File</span>, escribe el código, guárdalo en tu carpeta <code class="i">curso</code> y pulsa <kbd>F5</kbd> para ejecutarlo.</li>
+  </ol>
+
+  <h3>Ejemplo 1: variables</h3>
+  <div class="block code">
+    <div class="label"><span>hola.py</span><button class="copy" type="button">Copiar</button></div>
+<pre><span class="c"># Una línea que empieza con # es un comentario: Python la ignora</span>
+nombre = <span class="s">"Ana"</span>          <span class="c"># guardo un texto en una "caja" llamada nombre</span>
+edad = 25               <span class="c"># guardo un número en otra caja</span>
+
+print(<span class="s">"Hola,"</span>, nombre)   <span class="c"># print muestra algo en pantalla</span>
+print(<span class="s">"El año que viene tendrás"</span>, edad + 1)</pre>
+  </div>
+
+  <h3>Ejemplo 2: listas, for e if</h3>
+  <div class="block code">
+    <div class="label"><span>ventas_lista.py</span><button class="copy" type="button">Copiar</button></div>
+<pre>ventas = [120, 80, 200, 150]   <span class="c"># una lista: varios números en una sola caja</span>
+
+total = sum(ventas)            <span class="c"># sum suma todos los números de la lista</span>
+print(<span class="s">"Total vendido:"</span>, total)
+
+<span class="c"># for = "para cada venta de la lista, haz lo siguiente"</span>
+for venta in ventas:
+    if venta &gt; 100:            <span class="c"># if = "solo si se cumple esto"</span>
+        print(venta, <span class="s">"es una venta grande"</span>)</pre>
+  </div>
+  <div class="note"><p><strong>Los espacios al principio de la línea importan.</strong> Así Python sabe qué está «dentro» del <code class="i">for</code> y del <code class="i">if</code>. Usa siempre 4 espacios.</p></div>
+
+  <div class="block prompt">
+    <div class="label"><span>PÍDELE A TU TUTORA</span><button class="copy" type="button">Copiar</button></div>
+<pre>Estoy en la Etapa 2. Este es mi código: [pega tu código aquí]. Explícame qué hace cada línea como si tuviera 12 años y luego dame un ejercicio parecido, pero un poquito más difícil, sin darme la solución.</pre>
+  </div>
+
+  <div class="done"><input type="checkbox" id="chk2" data-step><label for="chk2"><b>Lo lograste si…</b>puedes escribir sin mirar un programa que recorre una lista de números y avisa cuáles son mayores que 100.</label></div>
+</section>
+
+<section id="f3">
+  <span class="phase-tag py"><b>Etapa 3</b> Semana 3–4</span>
+  <h2>Tablas con pandas</h2>
+  <p class="meta">Objetivo: hacer con Python lo mismo que hiciste en Power BI. Pandas es como «Excel con código».</p>
+  <p>Guarda este archivo en la <strong>misma carpeta</strong> que <code class="i">ventas.csv</code> y ejecútalo con <kbd>F5</kbd>.</p>
+  <div class="block code">
+    <div class="label"><span>analisis.py</span><button class="copy" type="button">Copiar</button></div>
+<pre>import pandas as pd                       <span class="c"># traigo la herramienta pandas y la llamo "pd"</span>
+
+tabla = pd.read_csv(<span class="s">"ventas.csv"</span>)          <span class="c"># leo el archivo y lo guardo como tabla</span>
+print(tabla.head())                       <span class="c"># muestro las primeras 5 filas</span>
+
+<span class="c"># creo una columna nueva: total = cantidad × precio</span>
+tabla[<span class="s">"total"</span>] = tabla[<span class="s">"cantidad"</span>] * tabla[<span class="s">"precio"</span>]
+
+<span class="c"># agrupo por producto y sumo el total de cada uno</span>
+por_producto = tabla.groupby(<span class="s">"producto"</span>)[<span class="s">"total"</span>].sum()
+print(por_producto)</pre>
+  </div>
+  <p><strong>Retos para practicar</strong> (pídele pistas a la IA si te atascas):</p>
+  <ul>
+    <li>Calcula el total vendido por <code class="i">ciudad</code>.</li>
+    <li>Muestra solo las filas donde <code class="i">categoria</code> sea «Bebidas».</li>
+    <li>Averigua cuál es el producto que más dinero ha generado.</li>
+  </ul>
+
+  <div class="block prompt">
+    <div class="label"><span>PÍDELE A TU TUTORA</span><button class="copy" type="button">Copiar</button></div>
+<pre>Estoy en la Etapa 3 con pandas. Quiero mostrar solo las filas donde la categoria sea "Bebidas". No me des el código todavía: dame una pista sobre qué tengo que escribir entre los corchetes.</pre>
+  </div>
+
+  <div class="done"><input type="checkbox" id="chk3" data-step><label for="chk3"><b>Lo lograste si…</b>tu programa muestra el total por producto y el total por ciudad, y los números coinciden con los de Power BI.</label></div>
+</section>
+
+<section id="f4">
+  <span class="phase-tag py"><b>Etapa 4</b> Semana 4–5</span>
+  <h2>Python dentro de Power BI</h2>
+  <p class="meta">Objetivo: unir las dos cosas. Hay tres lugares donde Power BI acepta Python.</p>
+
+  <h3>A. Python como origen de datos</h3>
+  <ol class="steps">
+    <li>Abre un archivo nuevo de Power BI: <span class="path">Inicio → Obtener datos → Más… → Otras → Script de Python</span>.</li>
+    <li>Pega este código. Cambia <code class="i">TuNombre</code> por tu usuario de Windows. Truco: en el Explorador de archivos, haz <kbd>Shift</kbd> + clic derecho sobre <code class="i">ventas.csv</code> → «Copiar como ruta de acceso».</li>
+  </ol>
+  <div class="block code">
+    <div class="label"><span>Script de Python · origen de datos</span><button class="copy" type="button">Copiar</button></div>
+<pre>import pandas as pd
+
+<span class="c"># la r antes de las comillas evita problemas con las barras \ de Windows</span>
+ventas = pd.read_csv(<span class="s">r"C:\Users\TuNombre\Documents\curso\ventas.csv"</span>)
+
+<span class="c"># preparo los datos antes de que lleguen a Power BI</span>
+ventas[<span class="s">"total"</span>] = ventas[<span class="s">"cantidad"</span>] * ventas[<span class="s">"precio"</span>]</pre>
+  </div>
+  <ol class="steps" start="3">
+    <li>Pulsa <strong>Aceptar</strong>. Power BI te mostrará cada tabla que creaste en el código. Marca <code class="i">ventas</code> y pulsa <strong>Cargar</strong>.</li>
+  </ol>
+
+  <h3>B. Transformar datos con Python en Power Query</h3>
+  <ol class="steps">
+    <li><span class="path">Inicio → Transformar datos</span> → selecciona tu tabla → <span class="path">Transformar → Ejecutar script de Python</span>.</li>
+    <li>Power BI te entrega la tabla con el nombre <code class="i">dataset</code>. Escribe:</li>
+  </ol>
+  <div class="block code">
+    <div class="label"><span>Ejecutar script de Python · Power Query</span><button class="copy" type="button">Copiar</button></div>
+<pre><span class="c"># "dataset" es la tabla que Power BI me entrega automáticamente</span>
+
+<span class="c"># marco como "grande" cada venta de más de 10</span>
+dataset[<span class="s">"es_grande"</span>] = dataset[<span class="s">"total"</span>] &gt; 10
+
+<span class="c"># paso el nombre de la ciudad a MAYÚSCULAS</span>
+dataset[<span class="s">"ciudad"</span>] = dataset[<span class="s">"ciudad"</span>].str.upper()</pre>
+  </div>
+  <ol class="steps" start="3">
+    <li>Aparece una pequeña tabla de resultados. Haz clic en la palabra <strong>Table</strong> junto a <code class="i">dataset</code>.</li>
+    <li>Si te pregunta por <strong>niveles de privacidad</strong>, para practicar con estos datos puedes marcar «Omitir comprobaciones de niveles de privacidad».</li>
+  </ol>
+
+  <h3>C. Un gráfico hecho con Python</h3>
+  <ol class="steps">
+    <li>En el panel <strong>Visualizaciones</strong>, pulsa el icono <strong>Py</strong> y acepta <strong>Habilitar</strong>.</li>
+    <li>Arrastra <code class="i">fecha</code>, <code class="i">producto</code> y <code class="i">total</code> a «Valores».</li>
+    <li>Abajo aparece el editor. Escribe esto y pulsa el botón ▶ (Ejecutar):</li>
+  </ol>
+  <div class="block code">
+    <div class="label"><span>Objeto visual de Python</span><button class="copy" type="button">Copiar</button></div>
+<pre>import matplotlib.pyplot as plt   <span class="c"># herramienta para dibujar gráficos</span>
+
+<span class="c"># sumo el total de cada producto</span>
+resumen = dataset.groupby(<span class="s">"producto"</span>)[<span class="s">"total"</span>].sum()
+
+resumen.plot(kind=<span class="s">"bar"</span>, color=<span class="s">"#F2C811"</span>)  <span class="c"># gráfico de barras amarillas</span>
+plt.title(<span class="s">"Ventas por producto"</span>)             <span class="c"># título</span>
+plt.ylabel(<span class="s">"Total"</span>)                           <span class="c"># nombre del eje vertical</span>
+plt.tight_layout()                            <span class="c"># acomoda para que no se corte</span>
+plt.show()                                    <span class="c"># ¡dibuja!</span></pre>
+  </div>
+  <div class="note warn"><p><strong>¿Por qué también arrastramos <code class="i">fecha</code>?</strong> El objeto visual de Python elimina las filas repetidas. Si dos ventas tienen el mismo producto y el mismo total, contaría solo una. Añadir una columna que diferencie las filas evita ese error silencioso.</p></div>
+
+  <div class="block prompt">
+    <div class="label"><span>PÍDELE A TU TUTORA</span><button class="copy" type="button">Copiar</button></div>
+<pre>Estoy en la Etapa 4. Hice un objeto visual de Python en Power BI con un gráfico de barras. Enséñame a cambiarlo por un gráfico de líneas que muestre el total por fecha. Explícame solo las líneas que cambian.</pre>
+  </div>
+
+  <div class="done"><input type="checkbox" id="chk4" data-step><label for="chk4"><b>Lo lograste si…</b>tienes un informe con datos cargados desde Python, una columna creada con «Ejecutar script de Python» y un gráfico de Python que responde a los filtros.</label></div>
+</section>
+
+<section id="f5">
+  <span class="phase-tag"><b>Etapa 5</b> Semana 6</span>
+  <h2>Proyecto final</h2>
+  <p class="meta">Objetivo: hacerlo sola, de principio a fin, con la IA solo como apoyo.</p>
+  <ol class="steps">
+    <li><strong>Elige unos datos que te interesen:</strong> tus gastos del mes, tus series favoritas, o un conjunto público de <span class="path">datos.gob.es</span> o <span class="path">kaggle.com</span>.</li>
+    <li><strong>Escribe 3 preguntas</strong> que quieras responder. Por ejemplo: «¿en qué gasto más?», «¿qué mes fue el más caro?».</li>
+    <li><strong>Limpia los datos</strong> con Power Query o con Python.</li>
+    <li><strong>Crea una página de informe</strong> con al menos una medida DAX, un gráfico normal, un gráfico de Python y un filtro.</li>
+    <li><strong>Enséñaselo a alguien</strong> y explícale qué descubriste. Si puedes explicarlo, lo entiendes.</li>
+  </ol>
+  <div class="block prompt">
+    <div class="label"><span>PÍDELE A TU TUTORA</span><button class="copy" type="button">Copiar</button></div>
+<pre>Estoy en la Etapa 5, el proyecto final. Mis datos tienen estas columnas: [escribe los nombres de las columnas, NO los datos privados]. Mis 3 preguntas son: [escríbelas]. Ayúdame a hacer un plan paso a paso, pero déjame hacer cada paso yo sola y revisa lo que hago.</pre>
+  </div>
+  <div class="done"><input type="checkbox" id="chk5" data-step><label for="chk5"><b>Lo lograste si…</b>tu informe responde tus 3 preguntas y puedes explicar qué hace cada línea de tu código Python.</label></div>
+</section>
+
+<section id="prompts">
+  <h2>Frases útiles para la IA</h2>
+  <p>Cópialas cuando las necesites. Van muy bien después de haber pegado el prompt del tutor.</p>
+  <div class="toolbox">
+    <div class="tool"><div class="when"><span>No entiendo un código</span><button class="copy" type="button">Copiar</button></div><p>Explícame este código línea por línea, como si tuviera 12 años:
+[pega el código]</p></div>
+    <div class="tool"><div class="when"><span>Me salió un error</span><button class="copy" type="button">Copiar</button></div><p>Me salió este error. No me des el código corregido todavía; dime qué significa y dame una pista:
+Error: [pega el error]
+Mi código: [pega el código]</p></div>
+    <div class="tool"><div class="when"><span>Quiero practicar más</span><button class="copy" type="button">Copiar</button></div><p>Dame un ejercicio parecido al anterior, pero un poco más difícil. No me des la solución hasta que te la pida.</p></div>
+    <div class="tool"><div class="when"><span>Revisar mi trabajo</span><button class="copy" type="button">Copiar</button></div><p>Revisa mi código. Dime una cosa que hice bien y una sola cosa que puedo mejorar:
+[pega el código]</p></div>
+    <div class="tool"><div class="when"><span>Comparar herramientas</span><button class="copy" type="button">Copiar</button></div><p>¿Cómo haría esto mismo en Power BI sin usar Python? ¿Cuándo conviene usar cada opción?</p></div>
+    <div class="tool"><div class="when"><span>Comprobar lo aprendido</span><button class="copy" type="button">Copiar</button></div><p>Hazme un quiz de 5 preguntas sobre lo que aprendimos hoy. Hazme una pregunta cada vez y espera mi respuesta.</p></div>
+    <div class="tool"><div class="when"><span>La IA va muy rápido</span><button class="copy" type="button">Copiar</button></div><p>Vas demasiado rápido. Vuelve a explicarlo más despacio, con un ejemplo de la vida diaria y un código de máximo 5 líneas.</p></div>
+    <div class="tool"><div class="when"><span>Terminar la sesión</span><button class="copy" type="button">Copiar</button></div><p>RESUMEN</p></div>
+  </div>
+</section>
+
+<section id="errores">
+  <h2>Cuando algo falla</h2>
+  <p>Los errores son normales; incluso quienes programan desde hace años los ven todos los días. Lee la <strong>última línea</strong> del mensaje rojo: ahí suele estar la pista.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Mensaje o síntoma</th><th>Qué significa</th><th>Cómo arreglarlo</th></tr></thead>
+      <tbody>
+        <tr><td><code>'pip' no se reconoce como un comando</code></td><td>Windows no encuentra Python.</td><td>Reinstala Python marcando «Add python.exe to PATH».</td></tr>
+        <tr><td><code>ModuleNotFoundError: No module named 'pandas'</code></td><td>Falta instalar pandas.</td><td>En el Símbolo del sistema: <code>pip install pandas matplotlib</code>.</td></tr>
+        <tr><td><code>FileNotFoundError</code></td><td>Python no encuentra el archivo.</td><td>Revisa la ruta y usa <code>r"..."</code>. En IDLE, guarda el .py en la misma carpeta que el .csv.</td></tr>
+        <tr><td><code>KeyError: 'Total'</code></td><td>Esa columna no existe con ese nombre.</td><td>Revisa mayúsculas y tildes: <code>total</code> no es igual a <code>Total</code>.</td></tr>
+        <tr><td><code>IndentationError</code></td><td>Los espacios al inicio de línea no cuadran.</td><td>Usa 4 espacios dentro de cada <code>for</code> e <code>if</code>.</td></tr>
+        <tr><td><code>SyntaxError</code></td><td>Algo está mal escrito.</td><td>Busca comillas, paréntesis o dos puntos <code>:</code> que falten.</td></tr>
+        <tr><td>Power BI: «No se detectó ninguna instalación de Python»</td><td>Power BI no sabe dónde está Python.</td><td>Revisa <span class="path">Opciones → Scripts de Python</span> (etapa 0, paso 3).</td></tr>
+        <tr><td>Los precios salen ×100</td><td>Tu Windows usa coma decimal.</td><td>Cambia el tipo con «Usar configuración regional» → Inglés (Estados Unidos).</td></tr>
+        <tr><td>El gráfico de Python muestra números más bajos</td><td>Se eliminaron filas repetidas.</td><td>Añade <code>fecha</code> u otra columna que diferencie las filas.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="reglas">
+  <h2>Reglas de oro para aprender con IA</h2>
+  <ul class="rules">
+    <li><b>Primero inténtalo tú.</b> Dedica al menos 10 minutos a pelearte con el problema antes de pedir ayuda. Ahí es cuando más se aprende.</li>
+    <li><b>Pide pistas, no respuestas.</b> Si la IA te lo resuelve todo, sentirás que aprendes, pero no podrás repetirlo sola.</li>
+    <li><b>Escribe el código a mano.</b> Copiar y pegar es rápido, pero no se queda en la memoria.</li>
+    <li><b>La IA también se equivoca.</b> Ejecuta siempre el código y comprueba que los números tienen sentido.</li>
+    <li><b>Nunca pegues datos privados.</b> Ni contraseñas, ni datos de clientes, ni información de tu trabajo. Comparte solo los nombres de las columnas o datos inventados.</li>
+    <li><b>Explícalo con tus palabras.</b> Al terminar cada sesión, escribe en una libreta 3 cosas que aprendiste.</li>
+  </ul>
+</section>
+
+<footer>Hecho con cariño para que aprendas a tu ritmo. Tu progreso se guarda solo en este navegador.</footer>
+</main>
+</div>
+</div>
+
+<script>
+(function(){
+  // Botones de copiar
+  function copyText(text, btn){
+    function ok(){ var o=btn.textContent; btn.textContent="¡Copiado!"; setTimeout(function(){btn.textContent=o;},1500); }
+    function fallback(){
+      var ta=document.createElement("textarea"); ta.value=text; ta.setAttribute("readonly","");
+      ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select();
+      try{ document.execCommand("copy"); ok(); }catch(e){ btn.textContent="Selecciona y copia"; }
+      document.body.removeChild(ta);
+    }
+    try{
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(ok, fallback); }
+      else fallback();
+    }catch(e){ fallback(); }
+  }
+  document.querySelectorAll("button.copy").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var box=btn.closest(".block, .tool");
+      var src=box.querySelector("pre, p");
+      copyText(src.innerText.trim(), btn);
+    });
+  });
+
+  // Progreso
+  var KEY="ruta-pbi-python-progreso";
+  var boxes=[].slice.call(document.querySelectorAll("input[data-step]"));
+  var saved={};
+  try{ saved=JSON.parse(localStorage.getItem(KEY)||"{}")||{}; }catch(e){}
+  function render(){
+    var n=boxes.filter(function(b){return b.checked;}).length;
+    var t=document.getElementById("progText"), bar=document.getElementById("progBar");
+    if(t) t.textContent=n+" de "+boxes.length+" etapas";
+    if(bar) bar.style.width=(n/boxes.length*100)+"%";
+  }
+  boxes.forEach(function(b){
+    b.checked=!!saved[b.id];
+    b.addEventListener("change", function(){
+      saved[b.id]=b.checked;
+      try{ localStorage.setItem(KEY, JSON.stringify(saved)); }catch(e){}
+      render();
+    });
+  });
+  render();
+})();
+</script>

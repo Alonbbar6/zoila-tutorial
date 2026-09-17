@@ -1,0 +1,11 @@
+# Secrets and local state of the Claude Code bridge
+bridge/.env
+bridge/.state.json
+bridge/.state.json.tmp
+
+# Local dev server data
+dev/.data*
+
+# Tooling and OS files
+node_modules/
+.DS_Store

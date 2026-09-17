@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Tutor Console</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2316191d'/%3E%3Crect x='7' y='17' width='4' height='8' rx='1' fill='%23f2c811'/%3E%3Crect x='14' y='12' width='4' height='13' rx='1' fill='%23f2c811'/%3E%3Crect x='21' y='7' width='4' height='18' rx='1' fill='%2386b4ea'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="assets/base.css">
+  <link rel="stylesheet" href="assets/admin.css">
+  <script type="module" src="assets/admin.js"></script>
+</head>
+<body class="admin">
+
+  <!-- Shown until admin.js decides which screen applies. -->
+  <main id="screen-boot" class="screen center-screen">
+    <p class="hint">Loading the console…</p>
+    <noscript><p class="notice notice-warn">This console needs JavaScript.</p></noscript>
+  </main>
+
+  <!-- Backend URL missing in assets/config.js -->
+  <main id="screen-not-configured" class="screen center-screen" hidden>
+    <section class="card" aria-labelledby="nc-title">
+      <p class="eyebrow">Tutor Console</p>
+      <h1 id="nc-title">Backend not connected yet</h1>
+      <p>This page doesn't know where the backend lives. Open <code>assets/config.js</code>, paste your Apps Script Web App URL (it ends with <code>/exec</code>) into <code>CONFIG.apiUrl</code>, and publish the site again.</p>
+      <p class="hint">README.md, step 3, walks through it.</p>
+    </section>
+  </main>
+
+  <!-- Sign-in -->
+  <main id="screen-signin" class="screen center-screen" hidden>
+    <section class="card" aria-labelledby="signin-title">
+      <p class="eyebrow">Tutor Console</p>
+      <h1 id="signin-title">Sign in</h1>
+      <p id="signin-msg" class="notice" role="status" hidden></p>
+      <form id="signin-form" class="stack" novalidate>
+        <div class="field">
+          <label for="signin-token">Admin token</label>
+          <input id="signin-token" class="input code" type="password" autocomplete="current-password" spellcheck="false" autocapitalize="off" aria-describedby="signin-hint">
+          <p id="signin-hint" class="hint">Run <code>setup()</code> in the Apps Script editor and copy the admin token from its log. Tip: open <code>admin.html#admin=YOUR_TOKEN</code> once and this browser remembers it.</p>
+        </div>
+        <label class="check" for="signin-show"><input type="checkbox" id="signin-show"> Show token</label>
+        <button id="signin-submit" class="btn btn-primary" type="submit">Sign in</button>
+      </form>
+    </section>
+  </main>
+
+  <!-- Console -->
+  <div id="screen-console" class="screen" hidden>
+    <header class="topbar">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#16191d"/><rect x="7" y="17" width="4" height="8" rx="1" fill="#f2c811"/><rect x="14" y="12" width="4" height="13" rx="1" fill="#f2c811"/><rect x="21" y="7" width="4" height="18" rx="1" fill="#86b4ea"/></svg>
+        <div>
+          <h1>Tutor Console</h1>
+          <p id="console-sub" class="eyebrow"></p>
+        </div>
+      </div>
+      <nav class="topbar-actions" aria-label="Console actions">
+        <span id="link-warn" class="pill pill-alert pill-xs" hidden>Site URL not set</span>
+        <button id="btn-copy-link" class="btn btn-sm" type="button" aria-describedby="link-warn">Copy student link</button>
+        <button id="btn-notify" class="btn btn-sm" type="button">Enable desktop notifications</button>
+        <button id="btn-settings" class="btn btn-sm" type="button">Settings</button>
+        <button id="btn-signout" class="btn btn-ghost btn-sm" type="button">Sign out</button>
+      </nav>
+    </header>
+
+    <p id="conn-banner" class="notice notice-warn conn-banner" role="status" hidden><strong>Connection problem.</strong> <span id="conn-text"></span></p>
+
+    <!-- Summary strip: is the backend healthy? -->
+    <section id="status-strip" class="strip" aria-label="Backend status">
+      <div class="stat">
+        <span class="stat-label">Auto Claude calls today</span>
+        <div class="stat-line">
+          <span class="stat-big"><span id="calls-today">–</span><span class="stat-of"> / <span id="calls-cap">–</span></span></span>
+          <span id="calls-pill" class="pill pill-xs" hidden></span>
+        </div>
+        <span class="meter" aria-hidden="true"><span id="calls-bar"></span></span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Backend</span>
+        <div class="stat-line">
+          <span id="tick-text" class="stat-value">–</span>
+          <span id="tick-pill" class="pill pill-xs" hidden></span>
+        </div>
+        <p id="tick-hint" class="stat-hint warn" hidden>The minute trigger is not running. Open the Apps Script editor and run <code>setup()</code>.</p>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Claude API key</span>
+        <div class="stat-line">
+          <span id="key-text" class="stat-value">–</span>
+          <span id="key-pill" class="pill pill-xs" hidden></span>
+        </div>
+        <p id="key-hint" class="stat-hint warn" hidden>Add <code>ANTHROPIC_API_KEY</code> in Script Properties.</p>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Email intake</span>
+        <div class="stat-line">
+          <span id="email-text" class="stat-value">–</span>
+          <span id="email-pill" class="pill pill-xs" hidden></span>
+        </div>
+        <p id="email-hint" class="stat-hint"></p>
+      </div>
+      <details id="stat-error" class="stat stat-error" hidden>
+        <summary><span class="stat-label">Last backend error</span> <span class="pill pill-alert pill-xs">Show</span></summary>
+        <pre id="error-text" class="error-text"></pre>
+      </details>
+    </section>
+
+    <div id="console-grid" class="console-grid" data-view="list">
+      <!-- Inbox -->
+      <section id="inbox" class="panel inbox" aria-labelledby="inbox-heading">
+        <div class="inbox-head">
+          <h2 id="inbox-heading">Inbox</h2>
+          <span id="sync-status" class="hint sync-status"></span>
+          <button id="btn-refresh" class="btn btn-ghost btn-sm" type="button">Refresh</button>
+        </div>
+        <div class="filters" role="group" aria-label="Filter threads">
+          <button type="button" class="filter" id="filter-needs" data-filter="needs" aria-pressed="false">Needs you <span class="count num" id="count-needs">–</span></button>
+          <button type="button" class="filter" id="filter-all" data-filter="all" aria-pressed="false">All <span class="count num" id="count-all">–</span></button>
+          <button type="button" class="filter" id="filter-direct" data-filter="direct" aria-pressed="false">Direct <span class="count num" id="count-direct">–</span></button>
+          <button type="button" class="filter" id="filter-email" data-filter="email" aria-pressed="false">Email <span class="count num" id="count-email">–</span></button>
+        </div>
+        <div id="list-loading" class="list-loading" aria-hidden="true">
+          <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
+        </div>
+        <ul id="thread-list" class="thread-list" aria-label="Threads"></ul>
+        <div id="list-empty" class="list-empty" hidden>
+          <p id="list-empty-text"></p>
+          <button id="btn-show-all" class="btn btn-sm" type="button" hidden>Show all threads</button>
+        </div>
+      </section>
+
+      <!-- Thread detail -->
+      <section id="detail" class="panel detail" aria-label="Thread">
+        <div id="detail-empty" class="detail-empty">
+          <p id="detail-empty-title" class="detail-empty-title">Select a thread</p>
+          <p id="detail-empty-text" class="hint">Pick a thread in the inbox to read the conversation and reply.</p>
+          <button id="btn-open-next" class="btn btn-sm" type="button" hidden></button>
+        </div>
+
+        <div id="detail-loading" class="detail-loading" hidden aria-hidden="true">
+          <div class="skeleton sk-title"></div><div class="skeleton sk-msg"></div><div class="skeleton sk-msg"></div>
+        </div>
+
+        <div id="detail-error" class="notice notice-warn" role="alert" hidden>
+          <span id="detail-error-text"></span>
+          <button id="btn-detail-retry" class="btn btn-sm" type="button">Try again</button>
+        </div>
+
+        <article id="detail-thread" class="detail-thread" hidden>
+          <button id="btn-back" class="btn btn-ghost btn-sm back-btn" type="button">← Inbox</button>
+          <header class="detail-head">
+            <div class="detail-titlebar">
+              <h2 id="detail-title" class="detail-title" tabindex="-1"><span id="detail-num" class="num detail-num"></span> <span id="detail-title-text"></span></h2>
+              <div class="detail-actions">
+                <button id="btn-close-thread" class="btn btn-sm" type="button">Close thread</button>
+                <button id="btn-delete-thread" class="btn btn-sm btn-danger" type="button">Delete…</button>
+              </div>
+            </div>
+            <div id="detail-pills" class="pill-row"></div>
+          </header>
+
+          <div id="detail-notes" class="notes"></div>
+
+          <h3 class="sr-only">Conversation</h3>
+          <ol id="history" class="history"></ol>
+          <p id="history-empty" class="hint" hidden>No messages in this thread.</p>
+
+          <form id="composer" class="composer" novalidate>
+            <div class="composer-top">
+              <label id="reply-label" for="reply-text" class="composer-label">Reply</label>
+              <div class="seg" role="tablist" aria-label="Reply editor mode">
+                <button type="button" role="tab" id="tab-write" aria-selected="true" aria-controls="panel-write">Write</button>
+                <button type="button" role="tab" id="tab-preview" aria-selected="false" aria-controls="panel-preview" tabindex="-1">Preview</button>
+              </div>
+            </div>
+
+            <div id="draft-bar" class="draft-bar" hidden>
+              <span><strong>Draft ready</strong> · written <time id="draft-at"></time><span id="draft-stale" class="draft-stale" hidden> (before the latest message)</span></span>
+              <button id="btn-insert-draft" class="btn btn-sm" type="button">Insert current draft</button>
+            </div>
+
+            <div id="panel-write" role="tabpanel" aria-labelledby="tab-write">
+              <textarea id="reply-text" class="textarea" rows="9" placeholder="Write the reply in Spanish. Markdown works." aria-describedby="reply-hint composer-error"></textarea>
+            </div>
+            <div id="panel-preview" role="tabpanel" aria-labelledby="tab-preview" hidden>
+              <div id="reply-preview" class="md preview" tabindex="0"></div>
+            </div>
+            <p id="reply-hint" class="hint">Markdown supported. <kbd id="send-shortcut">Ctrl+Enter</kbd> sends.</p>
+            <p id="composer-error" class="field-error" role="alert"></p>
+
+            <div class="composer-bottom">
+              <div class="composer-options">
+                <div id="send-as-group" class="send-as" role="radiogroup" aria-labelledby="send-as-label">
+                  <span id="send-as-label" class="label">Send as</span>
+                  <label class="radio" for="send-as-tutor"><input type="radio" name="send-as" id="send-as-tutor" value="tutor"> Tutor IA</label>
+                  <label class="radio" for="send-as-alon"><input type="radio" name="send-as" id="send-as-alon" value="alon"> <span id="send-as-alon-label">Owner</span></label>
+                </div>
+                <label id="reply-email-wrap" class="check" for="reply-email" hidden><input type="checkbox" id="reply-email"> Also reply by email</label>
+              </div>
+              <div class="composer-buttons">
+                <button id="btn-draft" class="btn btn-sm" type="button">Draft with Claude</button>
+                <button id="btn-send" class="btn btn-primary btn-sm" type="submit">Send reply</button>
+              </div>
+            </div>
+          </form>
+        </article>
+      </section>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <dialog id="settings-dialog" class="sheet" aria-labelledby="settings-title">
+    <form id="settings-form" novalidate>
+      <div class="sheet-head">
+        <h2 id="settings-title">Settings</h2>
+        <button id="settings-close" class="btn btn-ghost btn-sm" type="button">Close</button>
+      </div>
+      <div class="sheet-body">
+        <p id="settings-notice" class="notice notice-warn" hidden></p>
+        <p id="settings-error" class="notice notice-warn" role="alert" hidden></p>
+
+        <fieldset class="group">
+          <legend>People and links</legend>
+          <div class="two-col">
+            <div class="field">
+              <label for="set-studentName">Student name</label>
+              <input id="set-studentName" class="input" type="text" maxlength="60" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="set-tutorName">Your name (shown to the student)</label>
+              <input id="set-tutorName" class="input" type="text" maxlength="60" autocomplete="off">
+            </div>
+          </div>
+          <div class="field">
+            <label for="set-siteUrl">Site URL</label>
+            <input id="set-siteUrl" class="input" type="url" inputmode="url" spellcheck="false" placeholder="https://you.github.io/tutor-zoila/" aria-describedby="hint-siteUrl">
+            <p id="hint-siteUrl" class="hint">Where index.html is published. Used for the student link and links in emails.</p>
+          </div>
+        </fieldset>
+
+        <fieldset class="group">
+          <legend>Automatic answers</legend>
+          <div class="switch">
+            <input type="checkbox" role="switch" id="set-autoQuestion" class="switch-input" aria-describedby="hint-autoQuestion">
+            <label for="set-autoQuestion"><span class="switch-track" aria-hidden="true"></span>Auto-answer questions</label>
+            <p id="hint-autoQuestion" class="hint">Claude answers “question” threads on its own.</p>
+          </div>
+          <div class="switch">
+            <input type="checkbox" role="switch" id="set-autoDirect" class="switch-input" aria-describedby="hint-autoDirect">
+            <label for="set-autoDirect"><span class="switch-track" aria-hidden="true"></span>Auto-answer direct messages</label>
+            <p id="hint-autoDirect" class="hint">Usually off: direct messages are meant for you.</p>
+          </div>
+          <div class="switch">
+            <input type="checkbox" role="switch" id="set-draftDirect" class="switch-input" aria-describedby="hint-draftDirect">
+            <label for="set-draftDirect"><span class="switch-track" aria-hidden="true"></span>Pre-write drafts for direct messages</label>
+            <p id="hint-draftDirect" class="hint">When a direct message arrives, Claude writes a draft for you to review. Nothing is sent.</p>
+          </div>
+          <div class="field">
+            <label for="set-dailyCap">Daily cap for automatic Claude calls</label>
+            <input id="set-dailyCap" class="input num cap-input" type="number" min="0" max="500" step="1" inputmode="numeric" aria-describedby="hint-dailyCap">
+            <p id="hint-dailyCap" class="hint">0–500. Counts automatic answers and drafts. Drafts you request here don't count.</p>
+          </div>
+        </fieldset>
+
+        <fieldset class="group">
+          <legend>Email</legend>
+          <div class="field">
+            <label for="set-studentEmails">Student email addresses</label>
+            <textarea id="set-studentEmails" class="textarea code emails-input" rows="3" spellcheck="false" aria-describedby="hint-studentEmails"></textarea>
+            <p id="hint-studentEmails" class="hint">One per line or separated by commas. Only emails from these addresses are imported.</p>
+          </div>
+          <div class="switch">
+            <input type="checkbox" role="switch" id="set-emailReplies" class="switch-input" aria-describedby="hint-emailReplies">
+            <label for="set-emailReplies"><span class="switch-track" aria-hidden="true"></span>Reply by email to email threads</label>
+            <p id="hint-emailReplies" class="hint">Answers to threads that came in by email are also sent back by email.</p>
+          </div>
+          <div class="intake-row">
+            <button id="btn-intake" class="btn btn-sm" type="button">Check email now</button>
+            <span id="intake-result" class="hint" role="status"></span>
+          </div>
+        </fieldset>
+
+        <fieldset class="group">
+          <legend>Notifications to you</legend>
+          <div class="field">
+            <label for="set-notifyEmail">Notification email</label>
+            <input id="set-notifyEmail" class="input" type="email" inputmode="email" spellcheck="false" autocomplete="email" aria-describedby="hint-notifyEmail">
+            <p id="hint-notifyEmail" class="hint">Leave empty to turn email notifications off.</p>
+          </div>
+          <div class="field">
+            <label for="set-notifyOn">Notify me about</label>
+            <select id="set-notifyOn" class="select" aria-describedby="hint-notifyOn">
+              <option value="direct">Direct messages only</option>
+              <option value="all">Everything, including automatic answers</option>
+              <option value="none">Nothing</option>
+            </select>
+            <p id="hint-notifyOn" class="hint">Errors and a reached daily cap are always emailed when a notification email is set.</p>
+          </div>
+        </fieldset>
+      </div>
+      <div class="sheet-foot">
+        <button id="settings-cancel" class="btn btn-ghost btn-sm" type="button">Cancel</button>
+        <button id="settings-save" class="btn btn-primary btn-sm" type="submit">Save settings</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Generic confirmation (delete, replace text) -->
+  <dialog id="confirm-dialog" class="sheet sheet-small" aria-labelledby="confirm-title" aria-describedby="confirm-body">
+    <form method="dialog">
+      <div class="sheet-body">
+        <h2 id="confirm-title" class="confirm-title"></h2>
+        <p id="confirm-body"></p>
+      </div>
+      <div class="sheet-foot">
+        <button id="confirm-cancel" class="btn btn-sm" value="cancel">Cancel</button>
+        <button id="confirm-ok" class="btn btn-primary btn-sm" value="ok">Confirm</button>
+      </div>
+    </form>
+  </dialog>
+</body>
+</html>
