@@ -46,7 +46,7 @@ email. You see everything on the admin page, or through Claude Code on your comp
 - A GitHub account (free) for the website.
 - An Anthropic Console account with a little credit, for automatic answers.
 - For step 9 only: a computer with [Node.js](https://nodejs.org) 18 or newer and Claude Code.
-- This folder (`tutor-zoila`) on your computer.
+- This folder (`zoila-tutorial`) on your computer.
 
 ---
 
@@ -71,7 +71,7 @@ email. You see everything on the admin page, or through Claude Code on your comp
 1. Go to [console.anthropic.com](https://console.anthropic.com) and sign in (it may take you to the Claude Platform site;
    the names below may differ slightly).
 2. Under **Billing**, add some credit. Under **Limits**, you can also set a monthly spend limit.
-3. Open **API keys**, click **Create key**, name it `tutor-zoila`, and copy the key (it starts with `sk-ant-`).
+3. Open **API keys**, click **Create key**, name it `zoila-tutorial`, and copy the key (it starts with `sk-ant-`).
    You will only see it once.
 4. Back in Apps Script, click the **gear icon (Project Settings)** and scroll down to **Script Properties**.
 5. Click **Add script property** (or **Edit script properties** if some already exist).
@@ -121,11 +121,11 @@ Running `setup()` again later is safe: it never replaces existing tokens or sett
 ## Step 5: Publish the website on GitHub Pages
 
 1. On [github.com](https://github.com), click **+** (top right) → **New repository**.
-2. Repository name: `tutor-zoila`. Choose **Public** (free GitHub Pages needs a public repository).
+2. Repository name: `zoila-tutorial`. Choose **Public** (free GitHub Pages needs a public repository).
    Click **Create repository**.
 3. Upload the files, in either of two ways:
    - **In the browser:** on the new repository page, click **uploading an existing file**, drag in all the files
-     and folders from `tutor-zoila` (`index.html`, `guia.html`, `admin.html`, `assets`, `backend`, `bridge`, `dev`,
+     and folders from `zoila-tutorial` (`index.html`, `guia.html`, `admin.html`, `assets`, `backend`, `bridge`, `dev`,
      and the `.md` files), and click **Commit changes**. Hidden files (starting with a dot) are not needed for the site.
      **Never upload `bridge/.env`.**
    - **With git:** `git init`, `git add .`, `git commit -m "Tutor Zoila"`, then follow the "push an existing
@@ -133,7 +133,7 @@ Running `setup()` again later is safe: it never replaces existing tokens or sett
 4. In the repository, click **Settings** → **Pages** (left sidebar).
 5. Under **Build and deployment**: Source **Deploy from a branch**, Branch **main**, folder **/ (root)** → **Save**.
 6. Wait 1–2 minutes and refresh. The page shows **"Your site is live at
-   https://YOUR-USERNAME.github.io/tutor-zoila/"**.
+   https://alonbbar6.github.io/zoila-tutorial/"**.
 
 > The repository is public, so anyone can read the code. That is fine: **no secrets live in it**. The API key
 > and tokens stay in Script Properties, and `assets/config.js` only holds the web app URL, which is useless
@@ -141,10 +141,10 @@ Running `setup()` again later is safe: it never replaces existing tokens or sett
 
 ## Step 6: Open the admin page and fill in Settings
 
-1. Open `https://YOUR-USERNAME.github.io/tutor-zoila/admin.html#admin=YOUR_ADMIN_TOKEN`
+1. Open `https://alonbbar6.github.io/zoila-tutorial/admin.html#admin=YOUR_ADMIN_TOKEN`
    (paste the admin token from step 3). The page remembers the token in this browser and removes it from the address bar.
 2. Open **Settings** and fill in:
-   - **siteUrl**: `https://YOUR-USERNAME.github.io/tutor-zoila/`
+   - **siteUrl**: `https://alonbbar6.github.io/zoila-tutorial/`
    - **studentEmails**: Zoila's email address (or addresses). Only emails from these addresses are imported.
    - **notifyEmail**: where you want notifications (it can be your own Gmail). Leave it empty for no notification emails.
    - **studentName** / **tutorName**: how names appear. `tutorName` is how *you* appear to Zoila (default "Alon").
@@ -154,7 +154,7 @@ Running `setup()` again later is safe: it never replaces existing tokens or sett
 ## Step 7: Send Zoila her link
 
 Her link is **siteUrl + `#sala=` + the student link token**, for example
-`https://YOUR-USERNAME.github.io/tutor-zoila/#sala=abc123...`. The admin page can build and copy it for you.
+`https://alonbbar6.github.io/zoila-tutorial/#sala=abc123...`. The admin page can build and copy it for you.
 
 Send it to her privately. **That link is the key to the site: treat it like a password.** Anyone who has it
 can read and write in her conversations. After opening it once, her browser remembers it. If it ever leaks,
@@ -180,7 +180,7 @@ English, proposes replies in Spanish, and posts a reply **only after you approve
    - `TUTOR_API_URL=` your web app URL from step 4 (ending in `/exec`)
    - `TUTOR_ADMIN_TOKEN=` your admin token from step 3
 3. Test it: `node bridge/inbox.mjs` should list your threads.
-4. Open Claude Code in this folder (`cd tutor-zoila`, then `claude`) and say:
+4. Open Claude Code in this folder (`cd zoila-tutorial`, then `claude`) and say:
    **"watch for Zoila's messages"**.
 5. Keep the session open. When something arrives, Claude tells you who wrote and what she needs, shows a
    proposed reply, and waits for you to approve, edit or skip it. Claude Code may ask permission to run the
